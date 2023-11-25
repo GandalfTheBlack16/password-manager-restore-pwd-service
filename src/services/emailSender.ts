@@ -37,7 +37,7 @@ export const sendEmail = async (emailAddress: string, token: string) => {
     }
     logger.info(`Email sended to ${data.addresses}`)
   } catch (error) {
-    logger.warn(`Could not send email: ${(error as Error).stack}`)
+    logger.warn(`Could not send email: ${JSON.stringify(error as Error)}`)
   }
 }
 
