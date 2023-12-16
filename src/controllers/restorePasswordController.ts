@@ -3,7 +3,7 @@ import { validateEmail } from '../util/utils'
 import { logger } from '../log/logger'
 
 import { findUserByEmail, updateUserPassword } from '../services/userService'
-import { generateToken, decodeToken, hashPassword } from '../services/tokenService'
+import { hashPassword, generateToken, validateToken } from '../services/tokenService'
 import { sendEmail } from '../services/emailSender'
 
 export const sendPasswordRestoreTokenHandler = async (req: Request, res: Response) => {
@@ -18,7 +18,7 @@ export const sendPasswordRestoreTokenHandler = async (req: Request, res: Respons
   const userId = await findUserByEmail(email)
   if (userId) {
     logger.debug(`Found user with email ${email}. It's id is ${userId.toString()}`)
-    const token = generateToken(userId.toString(), email)
+    const token = await generateToken(userId.toString())
     logger.debug(`Generated token: ${token}`)
     void sendEmail(email, token)
   }
@@ -44,24 +44,35 @@ export const restorePasswordHandler = async (req: Request, res: Response) => {
     })
   }
   try {
-    const { userId, email } = decodeToken(token)
-    logger.debug(`Decoded user details from token (id: ${userId}, email: ${email})`)
-    await updateUserPassword(email, hashPassword(password))
+    const userId = await validateToken(token)
+    await updateUserPassword(userId, hashPassword(password))
     res.status(200).json({
       status: 'Success',
       message: 'Password updated'
     })
   } catch (err) {
-    if ((err as Error).name === 'TokenExpiredError') {
+    if ((err as Error).message.includes('Token has been already used')) {
+      return res.status(400).json({
+        status: 'Bad request',
+        message: `Token ${token} has been already used`
+      })
+    }
+    if ((err as Error).message.includes('Token cannot be used before')) {
+      return res.status(401).json({
+        status: 'Unauthorized',
+        message: 'Invalid token\'s creation date'
+      })
+    }
+    if ((err as Error).message.includes('Token is expired')) {
       return res.status(401).json({
         status: 'Unauthorized',
         message: 'Expired token provided'
       })
     }
-    if ((err as Error).name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        status: 'Unauthorized',
-        message: 'Invalid token provided'
+    if ((err as Error).message.includes('Invalid token provided')) {
+      return res.status(404).json({
+        status: 'Not found',
+        message: 'Provided token does not exists'
       })
     }
     return res.status(500).json({

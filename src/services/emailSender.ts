@@ -3,6 +3,8 @@ import { logger } from '../log/logger'
 
 config()
 
+const expirationTime = process.env.RESTORE_TOKEN_EXPIRATION ?? '30'
+
 export const sendEmail = async (emailAddress: string, token: string) => {
   logger.info(`Sending password recover email to ${emailAddress}`)
   const endpoint = process.env.SEND_EMAIL_SERVICE_ENDPOINT ?? 'http://localhost:3000/email'
@@ -51,7 +53,7 @@ const setHtmlContent = (token: string): string => {
       Reset password
     </a>
     <div style="margin-top: 2rem;">
-      <h4>This link will expire within 15 minutes.</h4>
+      <h4>This link will expire within ${expirationTime} minutes.</h4>
       <h4>If you don't want to reset your password, just ignore this message and nothing will be changed.</h4>
     </div>
   </div>
