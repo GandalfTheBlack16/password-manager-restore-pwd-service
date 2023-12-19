@@ -4,6 +4,7 @@ import { logger } from '../log/logger'
 config()
 
 const expirationTime = process.env.RESTORE_TOKEN_EXPIRATION ?? '30'
+const rootWebPage = process.env.ROOT_WEBPAGE ?? 'http://localhost:5173'
 
 export const sendEmail = async (emailAddress: string, token: string) => {
   logger.info(`Sending password recover email to ${emailAddress}`)
@@ -44,10 +45,10 @@ export const sendEmail = async (emailAddress: string, token: string) => {
 }
 
 const setHtmlContent = (token: string): string => {
-  const linkHref = `https://password-manager.up.railway.app/restore-password/${token}`
+  const linkHref = `${rootWebPage}/restore-password/${token}`
   return `
   <div style="background-color: #133d64; color: white; padding: 2rem; font-family: Poppins,sans-serif; width: fit-content; border-radius: 10px;">
-    <img src="https://password-manager.up.railway.app/assets/logo-no-background-0210caf7.png" alt="password-manager-logo" width="350px">
+    <img src="${rootWebPage}/assets/logo-no-background-0210caf7.png" alt="password-manager-logo" width="350px">
     <h2 style="margin-bottom: 2rem;">Someone just requested to reset the password on your account. If this was you, click on the next button to change it.</h2>
     <a href="${linkHref}" target="_blank" style="width: fit-content; padding: 0.8rem 2rem; font-size: medium; color: #f5f5f5; background-color: #31618f; border: none; border-radius: 20px; margin: auto; text-decoration: none;">
       Reset password
